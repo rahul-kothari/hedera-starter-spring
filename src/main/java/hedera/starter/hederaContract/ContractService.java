@@ -30,7 +30,7 @@ public class ContractService {
                 new ContractCreateTransaction()
                         .setBytecodeFileId(bytecodeFile)
                         .setAutoRenewPeriod(Duration.ofSeconds(8000000))
-                        .setGas(100_000_000)
+                        .setGas(300_000)
                         .setMaxTransactionFee(new Hbar(20))
                         .setAdminKey(EnvUtils.getOperatorKey().publicKey) //allows to delete contract
                         .execute(client);

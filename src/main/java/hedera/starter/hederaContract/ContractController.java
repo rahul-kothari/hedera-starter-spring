@@ -3,6 +3,7 @@ package hedera.starter.hederaContract;
 
 import com.hedera.hashgraph.sdk.HederaStatusException;
 import com.hedera.hashgraph.sdk.contract.ContractInfo;
+import hedera.starter.dto.SmartContract.SmartContractDTO;
 import hedera.starter.hederaContract.models.ContractCall;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,25 @@ public class ContractController {
             return contractService.createContract(bytecode);
         }
         return contractService.createContract(bytecode, paramValue);
+
+    }
+
+    @PostMapping("")
+    @ApiOperation("Create a Contract with a bytecode. NOTE- Can only contracts with no constructor parameters or 1 string parameter in constructor.")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "contract", type = "String", example = "608060405260006001601461010...", required = true),
+            @ApiImplicitParam(name = "paramValue", type = "String", example = "hello future...")
+    })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "Contract ID")})
+    public String createContractWithBytecodeJson(@RequestBody SmartContractDTO contract, @RequestParam(defaultValue = "") String paramValue) throws HederaStatusException {
+/*
+        if (paramValue.equals("")) {
+            return contractService.createContract(contract);
+        }
+        return contractService.createContract(contract, paramValue);
+        */
+
+        return "ok";
 
     }
 
