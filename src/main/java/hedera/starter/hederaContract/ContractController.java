@@ -46,7 +46,7 @@ public class ContractController {
 
     }
 
-    @PostMapping("")
+    @PostMapping("/xyz")
     @ApiOperation("Create a Contract with a bytecode. NOTE- Can only contracts with no constructor parameters or 1 string parameter in constructor.")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "contract", type = "String", example = "608060405260006001601461010...", required = true),
