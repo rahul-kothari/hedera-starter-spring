@@ -35,13 +35,14 @@ public class ContractController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "bytecode", type = "String", example = "608060405260006001601461010...", required = true),
             @ApiImplicitParam(name = "paramValue", type = "String", example = "hello future..."),
+            @ApiImplicitParam(name = "gasValue", type = "Long", example = "400000", required = false)
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "Contract ID")})
-    public String createContractWithGas(@RequestParam String bytecode, @RequestParam(defaultValue = "") String paramValue) throws HederaStatusException {
+    public String createContractWithGas(@RequestParam String bytecode, @RequestParam(defaultValue = "") String paramValue, @RequestParam(defaultValue = "400000", required = false) Long gasValue) throws HederaStatusException {
         if ("".equals(paramValue)) {
-            return contractService.createContractWithoutParam(bytecode);
+            return contractService.createContract(bytecode, gasValue);
         }
-        return contractService.createContractWithParam(bytecode, paramValue);
+        return contractService.createContract(bytecode, paramValue, gasValue);
     }
 
     @DeleteMapping("/{contractId}")
@@ -77,17 +78,22 @@ public class ContractController {
 
     @PostMapping("/contractCall/transaction")
     @ApiOperation("Execute a transaction on a contract that takes in a string argument")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "gasValue", type = "Long", example = "400000", required = false)
+    })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "success or failure")})
-    public boolean executeTransactionOnContract(@RequestBody ContractCall request) throws HederaStatusException {
-        return contractService.executeTransactionOnContract(request);
+    public boolean executeTransactionOnContract(@RequestBody ContractCall request, @RequestParam(defaultValue = "400000", required = false) Long gasValue ) throws HederaStatusException {
+        return contractService.executeTransactionOnContract(request, gasValue);
     }
 
     @PostMapping("/contractCall/query")
     @ApiOperation("Call a method on a contract that takes in a string argument and returns string")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "gasValue", type = "Long", example = "400000", required = false)
+    })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "result")})
-    public String contractCallQuery(@RequestBody ContractCall request) throws HederaStatusException {
-        return contractService.contractCallQuery(request);
+    public String contractCallQuery(@RequestBody ContractCall request, @RequestParam(defaultValue = "400000", required = false) Long gasValue ) throws HederaStatusException {
+        return contractService.contractCallQuery(request, gasValue);
     }
-
 
 }
