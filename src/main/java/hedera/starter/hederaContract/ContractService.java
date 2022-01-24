@@ -7,12 +7,15 @@ import com.hedera.hashgraph.sdk.contract.*;
 import com.hedera.hashgraph.sdk.file.FileAppendTransaction;
 import com.hedera.hashgraph.sdk.file.FileCreateTransaction;
 import com.hedera.hashgraph.sdk.file.FileId;
+import hedera.starter.dto.ContractInfoDTO;
 import hedera.starter.hederaContract.models.ContractCall;
 import hedera.starter.utilities.EnvUtils;
 import hedera.starter.utilities.HederaClient;
 import hedera.starter.utilities.Utils;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -23,16 +26,22 @@ public class ContractService {
 
     public Client client = HederaClient.getHederaClientInstance();
 
+    public String createContract(String bytecode, Long gasValue) throws HederaStatusException {
+        return this.createContractWithoutParam(bytecode, gasValue);
+    }
+
+    public String createContract(String bytecode, String constructorParameterValue, Long gasValue) throws HederaStatusException {
+        return createContractWithParam(bytecode, constructorParameterValue, gasValue);
+    }
+
     //Create contracts with a bytecode.
-    public String createContract(String bytecode) throws HederaStatusException {
+    public String createContractWithoutParam(String bytecode, long gasValue) throws HederaStatusException {
         FileId bytecodeFile = createBytecodeFile(bytecode);
         var contractTxId =
                 new ContractCreateTransaction()
                         .setBytecodeFileId(bytecodeFile)
                         .setAutoRenewPeriod(Duration.ofSeconds(8000000))
-                        .setGas(300_000)
-                        .setMaxTransactionFee(new Hbar(20))
-                        .setAdminKey(EnvUtils.getOperatorKey().publicKey) //allows to delete contract
+                        .setGas(gasValue)
                         .execute(client);
 
         var contractReceipt = contractTxId.getReceipt(client);
@@ -42,15 +51,14 @@ public class ContractService {
     }
 
     //create contract with bytecode that has 1 string parameter in its constructor.
-    public String createContract(String bytecode, String constructorParameterValue) throws HederaStatusException {
+    public String createContractWithParam(String bytecode, String constructorParameterValue, long gasValue) throws HederaStatusException {
         FileId bytecodeFile = createBytecodeFile(bytecode);
         var contractTxId =
                 new ContractCreateTransaction()
                         .setBytecodeFileId(bytecodeFile)
                         .setAutoRenewPeriod(Duration.ofSeconds(8000000))
                         .setMaxTransactionFee(new Hbar(20))
-                        .setGas(100_000_000)
-                        .setAdminKey(EnvUtils.getOperatorKey().publicKey) //allows to delete contract
+                        .setGas(gasValue)
                         .setConstructorParams(
                                 new ContractFunctionParams()
                                         .addString(constructorParameterValue))
@@ -75,7 +83,7 @@ public class ContractService {
 
     //get info of a contract
     //FIXME: https://github.com/hashgraph/hedera-sdk-java/issues/404
-    public ContractInfo getContractInfo(String contractId) throws HederaStatusException {
+    public ContractInfoDTO getContractInfo(String contractId) throws HederaStatusException {
         long cost = new ContractInfoQuery()
                 .setContractId(ContractId.fromString(contractId))
                 .getCost(client);
@@ -83,7 +91,8 @@ public class ContractService {
                 .setContractId(ContractId.fromString(contractId))
                 .setQueryPayment(cost + cost / 50)
                 .execute(client);
-        return info;
+
+        return new ContractInfoDTO(info);
     }
 
     //get bytecode of a contract
@@ -95,25 +104,24 @@ public class ContractService {
                 .setContractId(ContractId.fromString(contractId))
                 .setQueryPayment(cost + cost / 50)
                 .execute(client);
-        String bytecode = new String(contents);
+        String bytecode = new String(contents, StandardCharsets.US_ASCII);
         System.out.println("Bytecode for contact: " + bytecode);
         return bytecode;
     }
 
     //get state size stored on the contract
     public long queryContractStatesize(String contractId) throws HederaStatusException {
-        ContractInfo info = getContractInfo(contractId);
-        return info.storage;
+        return  getContractInfo(contractId).storage;
     }
 
-    public boolean executeTransactionOnContract(ContractCall request) throws HederaStatusException {
+    public boolean executeTransactionOnContract(ContractCall request, long gasValue) throws HederaStatusException {
         ContractId contractId = ContractId.fromString(request.getContractId());
         String functionName = request.getFunctionName();
         String argument = request.getArgument();
 
         var contractExecTxnId = new ContractExecuteTransaction()
                 .setContractId(contractId)
-                .setGas(100_000_000)
+                .setGas(gasValue)
                 .setFunction(functionName, new ContractFunctionParams()
                         .addString(argument))
                 .execute(client);
@@ -122,29 +130,47 @@ public class ContractService {
         return true;
     }
 
-    public String contractCallQuery(ContractCall request) throws HederaStatusException {
+    public String contractCallQuery(ContractCall request, long gasValue) throws HederaStatusException {
         ContractId contractId = ContractId.fromString(request.getContractId());
         String functionName = request.getFunctionName();
         String argument = request.getArgument();
 
-        long cost = new ContractCallQuery()
-                .setContractId(contractId)
-                .setGas(21000) //get this value from remix + trial and error on hedera.
-                .setFunction(
-                        functionName,
-                        new ContractFunctionParams()
-                                .addString(argument))
-                .getCost(client);
-        long estimatedCost = cost + cost / 50; // add 2% of this cost
-        var contractCallResult = new ContractCallQuery()
-                .setContractId(contractId)
-                .setQueryPayment(estimatedCost)
-                .setGas(21000) //get this value from remix + trial and error on hedera.
-                .setFunction(
-                        functionName,
-                        new ContractFunctionParams()
-                                .addString(argument))
-                .execute(client);
+        ContractFunctionParams params;
+        ContractFunctionResult contractCallResult = null;
+
+        if(argument != null) {
+            long cost = new ContractCallQuery()
+                    .setContractId(contractId)
+                    .setGas(gasValue) //get this value from remix + trial and error on hedera.
+                    .setFunction(
+                            functionName,
+                            new ContractFunctionParams()
+                                    .addString(argument))
+                    .getCost(client);
+            long estimatedCost = cost + cost / 50; // add 2% of this cost
+            contractCallResult = new ContractCallQuery()
+                    .setContractId(contractId)
+                    .setQueryPayment(estimatedCost)
+                    .setGas(gasValue) //get this value from remix + trial and error on hedera.
+                    .setFunction(
+                            functionName,
+                            new ContractFunctionParams()
+                                    .addString(argument))
+                    .execute(client);
+        }else{
+            long cost = new ContractCallQuery()
+                    .setContractId(contractId)
+                    .setGas(gasValue) //get this value from remix + trial and error on hedera.
+                    .setFunction(functionName)
+                    .getCost(client);
+            long estimatedCost = cost + cost / 50; // add 2% of this cost
+            contractCallResult = new ContractCallQuery()
+                    .setContractId(contractId)
+                    .setQueryPayment(estimatedCost)
+                    .setGas(gasValue) //get this value from remix + trial and error on hedera.
+                    .setFunction(functionName)
+                    .execute(client);
+        }
 
         if (contractCallResult.errorMessage != null) {
             String msg = "error calling contract: " + contractCallResult.errorMessage;
