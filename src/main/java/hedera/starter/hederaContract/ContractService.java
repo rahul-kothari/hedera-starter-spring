@@ -82,7 +82,6 @@ public class ContractService {
     }
 
     //get info of a contract
-    //FIXME: https://github.com/hashgraph/hedera-sdk-java/issues/404
     public ContractInfoDTO getContractInfo(String contractId) throws HederaStatusException {
         long cost = new ContractInfoQuery()
                 .setContractId(ContractId.fromString(contractId))

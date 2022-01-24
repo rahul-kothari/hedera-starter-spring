@@ -2,9 +2,7 @@ package hedera.starter.hederaContract;
 
 
 import com.hedera.hashgraph.sdk.HederaStatusException;
-import com.hedera.hashgraph.sdk.contract.ContractInfo;
 import hedera.starter.dto.ContractInfoDTO;
-import hedera.starter.dto.SmartContractDTO;
 import hedera.starter.hederaContract.models.ContractCall;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
