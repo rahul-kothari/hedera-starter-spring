@@ -31,7 +31,7 @@ The starter project supports the following Hedera APIs and methods:
     
 ## Building the Project
 Prerequisites:
-* Hedera Testnet Account [Sign up for one here](portal.hedera.com/register)
+* Hedera Testnet Account [Sign up for one here](https://portal.hedera.com/register)
 * [JDK](https://www.oracle.com/technetwork/java/javase/downloads/jdk10-downloads-4416644.html) : 11.x
 * [Maven](https://maven.apache.org/) : 3.6.0
 ### Install
