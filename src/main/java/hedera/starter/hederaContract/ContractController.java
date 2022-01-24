@@ -2,7 +2,7 @@ package hedera.starter.hederaContract;
 
 
 import com.hedera.hashgraph.sdk.HederaStatusException;
-import com.hedera.hashgraph.sdk.contract.ContractInfo;
+import hedera.starter.dto.ContractInfoDTO;
 import hedera.starter.hederaContract.models.ContractCall;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +34,14 @@ public class ContractController {
     @ApiOperation("Create a Contract with a bytecode. NOTE- Can only contracts with no constructor parameters or 1 string parameter in constructor.")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "bytecode", type = "String", example = "608060405260006001601461010...", required = true),
-            @ApiImplicitParam(name = "paramValue", type = "String", example = "hello future...")
+            @ApiImplicitParam(name = "paramValue", type = "String", example = "hello future..."),
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "Contract ID")})
-    public String createContract(@RequestParam String bytecode, @RequestParam(defaultValue = "") String paramValue) throws HederaStatusException {
-        if (paramValue.equals("")) {
-            return contractService.createContract(bytecode);
+    public String createContractWithGas(@RequestParam String bytecode, @RequestParam(defaultValue = "") String paramValue) throws HederaStatusException {
+        if ("".equals(paramValue)) {
+            return contractService.createContractWithoutParam(bytecode);
         }
-        return contractService.createContract(bytecode, paramValue);
-
+        return contractService.createContractWithParam(bytecode, paramValue);
     }
 
     @DeleteMapping("/{contractId}")
@@ -56,7 +55,7 @@ public class ContractController {
     @GetMapping("/{contractId}")
     @ApiOperation("Get info on a Contract")
     @ApiImplicitParam(name = "contractId", required = true, type = "String", example = "0.0.4117")
-    public ContractInfo getContractnfo(@PathVariable String contractId) throws HederaStatusException {
+    public ContractInfoDTO getContractnfo(@PathVariable String contractId) throws HederaStatusException {
         return contractService.getContractInfo(contractId);
     }
 
