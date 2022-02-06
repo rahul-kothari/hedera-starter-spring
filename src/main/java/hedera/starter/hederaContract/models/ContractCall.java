@@ -16,7 +16,7 @@ public class ContractCall implements Serializable {
     @ApiModelProperty(example = "aMethodName", name = "functionName", required = true)
     private String functionName;
 
-    @ApiModelProperty(example = "hello future again..", name = "argument", required = true)
+    @ApiModelProperty(example = "hello future again..", name = "argument", required = false)
     private String argument;
 
     public ContractCall() {
